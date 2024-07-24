@@ -1,0 +1,46 @@
+name: CI/CD Pipeline with Email Notification
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run tests
+      run: npm test
+
+    - name: Deploy
+      run: npm run deploy
+
+    - name: Send Email Notification
+      if: always() # Ensures the email is sent even if the previous steps fail
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: ${{ secrets.SMTP_SERVER }}
+        server_port: ${{ secrets.SMTP_PORT }}
+        username: ${{ secrets.SMTP_USERNAME }}
+        password: ${{ secrets.SMTP_PASSWORD }}
+        subject: Build ${{ job.status }} - ${{ github.repository }}
+        body: |
+          The latest build has completed.
+          Status: ${{ job.status }}
+          Repository: ${{ github.repository }}
+          Branch: ${{ github.ref }}
+          Commit: ${{ github.sha }}
+        to: recipient@example.com
+        from: ${{ secrets.SMTP_USERNAME }}

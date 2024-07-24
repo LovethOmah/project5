@@ -1,0 +1,35 @@
+name: CI/CD Pipeline with Slack Notification
+
+on:
+  push:
+    branches:
+      - slack-branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run tests
+      run: npm test
+
+    - name: Deploy
+      run: npm run deploy
+
+    - name: Send Slack Notification
+      if: always()
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+        --data "{\"text\":\"Build ${{ job.status }} for branch ${{ github.ref }} in repository ${{ github.repository }}. Commit: ${{ github.sha }}.\"}" \
+        ${{ secrets.SLACK_WEBHOOK_URL }}
